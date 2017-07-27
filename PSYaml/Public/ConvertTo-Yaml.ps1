@@ -115,34 +115,7 @@ function ConvertTo-Yaml
                 'DateTime'   { $inputObject.ToString('s') } # s=SortableDateTimePattern (based on ISO 8601) using local time
                 'Byte[]'     {
                     $string = [System.Convert]::ToBase64String($inputObject)
-                    if ($string.Length -gt 100)
-                    {
-                        # right, we have to format it to YAML spec.
-                        '!!binary "\' + "`r`n" # signal that we are going to use the readable Base64 string format
-                        #$bits = @()
-                        $length = $string.Length
-                        $IndexIntoString = 0
-                        $wrap = 100
-                        while ($length -gt $IndexIntoString + $Wrap)
-                        {
-                            $padding + $string.Substring($IndexIntoString, $wrap).Trim() + "`r`n"
-                            $IndexIntoString += $wrap
-                        }
-                        if ($IndexIntoString -lt $length)
-                        {
-                            $padding + $string.Substring($IndexIntoString).Trim() + "`r`n"
-                        }
-                        else
-                        {
-                            "`r`n" 
-                        }
-                    }
-                    
-                    else
-                    {
-                        '!!binary "' + $($string -replace '''', '''''') + '"'
-                    }
-                    
+                    '!!binary "' + $($string -replace '''', '''''') + '"'
                 }
                 'Boolean' {
                     "$(&{
@@ -152,56 +125,7 @@ function ConvertTo-Yaml
                 }
                 'string' {
                     $String = "$inputObject"
-                    if ($string -match '[\r\n]' -or $string.Length -gt 80)
-                    {
-                        # right, we have to format it to YAML spec.
-                        $folded = ">`r`n" # signal that we are going to use the readable 'newlines-folded' format
-                        $string.Split("`n") | ForEach-Object {
-                            $length = $_.Length
-                            $IndexIntoString = 0
-                            $wrap = 80
-                            while ($length -gt $IndexIntoString + $Wrap)
-                            {
-                                $BreakPoint = $wrap
-                                $earliest = $_.Substring($IndexIntoString, $wrap).LastIndexOf(' ')
-                                $latest = $_.Substring($IndexIntoString + $wrap).IndexOf(' ')
-                                if (($earliest -eq -1) -or ($latest -eq -1))
-                                {
-                                    $BreakPoint = $wrap
-                                }
-                                elseif ($wrap - $earliest -lt ($latest))
-                                {
-                                    $BreakPoint = $earliest
-                                }
-                                else
-                                {
-                                    $BreakPoint = $wrap + $latest
-                                }
-                                
-                                if (($wrap - $earliest) + $latest -gt 30)
-                                {
-                                    $BreakPoint = $wrap # in case it is a string without spaces
-                                } 
-                                
-                                $folded += $padding + $_.Substring($IndexIntoString, $BreakPoint).Trim() + "`r`n"
-                                $IndexIntoString += $BreakPoint
-                            }
-
-                            if ($IndexIntoString -lt $length)
-                            {
-                                $folded += $padding + $_.Substring($IndexIntoString).Trim() + "`r`n`r`n"
-                            }
-                            else
-                            {
-                                $folded += "`r`n`r`n"
-                            }
-                        }
-                        $folded
-                    }
-                    else
-                    {
-                        "'$($string -replace '''', '''''')'"
-                    }
+                    "'$($string -replace '''', '''''')'"
                 }
                 'Char'     { "([int]$inputObject)" }
                 {
